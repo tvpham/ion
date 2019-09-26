@@ -9,11 +9,6 @@
 
 ion <- list()
 
-
-# update
-# 190829: Wilcoxon test
-# 190926: Update heatmap function with row_colors, col_colors, and quick error handling of small margins for key
-
 # Normalization ----
 
 ion$normalize_global <- function(d, total_count = NULL) {
