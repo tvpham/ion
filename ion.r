@@ -9,6 +9,264 @@
 
 ion <- list()
 
+
+# Main ----
+ion$test <- function(d, groups, method, ...) {
+    
+    if (method == "beta-binomial") {
+        
+    } else {
+        cat("'method' must be one of \"beta-binomial\".")
+    }
+}
+
+
+ion$heatmap <- function(d,
+                        # a numeric matrix to show in the heatmap
+                        
+                        color = c("#4292C6", "#519CCC", "#61A7D2", "#72B1D7", "#85BCDB",
+                                  "#98C7DF", "#A9CEE4", "#B8D5EA", "#C6DBEF", "#CFE1F2",
+                                  "#D9E7F5", "#E2EDF8", "#EBF3FB", "#F5F9FE", "#F9F9F8",
+                                  "#FCF6F1", "#FEF3E8", "#FEEEDE", "#FEE8D3", "#FDE1C4",
+                                  "#FDD9B4", "#FDD0A3", "#FDC48F", "#FDB77A", "#FDAA66",
+                                  "#FD9E54", "#FD9142", "#FA8432", "#F57622", "#F16913"),
+                        # heatmap color, e.g. colorRampPalette(c("white", "Orange"))(32), rev(heat.colors(32)), or bluered(59), or c(colorRampPalette(c("blue", "white"))(30), colorRampPalette(c("white", "red"))(30)[-1])
+                        
+                        color_min = NULL,
+                        # values below this value will get the first color value, default minimum of d_heatmap
+                        
+                        color_max = NULL,
+                        # values above this value will get the last color value, default maximum of d_heatmap
+                        
+                        z_transform = "row",
+                        # set this to "col", "row", or "none".
+                        
+                        col_data = NA,
+                        # data use for column clustering
+                        
+                        col_distance = "euclidean",
+                        # distance for column clustering, e.g. "pearson" = 1-Pearson correlation, "spearman" = 1-Spearman correlation, "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski".
+                        
+                        col_linkage = "complete",
+                        # linkage for column clustering, e.g. "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
+                        
+                        col_reorder = TRUE,
+                        # reorder column as input while maintaining the tree structure
+                        
+                        col_labels = NULL,
+                        # column labels, e.g. colnames(d_heatmap),
+                        
+                        col_label_colors = NULL,
+                        # column labels colors
+                        
+                        col_label_rotated = 90,
+                        # degree of labels rotation
+                        
+                        col_color_bar = NULL,
+                        # a list of color vectors, each vector for a bar
+                        
+                        col_colors = NULL,
+                        # a vector of colors
+                        
+                        row_colors = NULL,
+                        # a vector of colors
+                        
+                        col_margin = 0.5,
+                        # margin for column labels
+                        
+                        row_data = NA,
+                        # data for row clustering
+                        
+                        row_distance = "euclidean",
+                        # "pearson", "spearman", "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski".
+                        
+                        row_linkage = "complete",
+                        # "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
+                        
+                        row_reorder = TRUE,
+                        # see column
+                        
+                        row_labels = NULL,
+                        # see column, rownames(d_heatmap),
+                        
+                        row_label_colors = NULL,
+                        # see column
+                        
+                        row_margin = 0.5,
+                        # see column
+                        
+                        sep = FALSE,
+                        # a separator between cells
+                        
+                        main = NULL,
+                        cexCol = 1,
+                        cexRow = 1,
+                        lwid = NULL,
+                        lhei = NULL,
+                        key = TRUE, ...) {
+    
+    zscore <- z_transform != "none"
+    
+    if (z_transform == "row") {
+        cat("\nRows are tranformed into z-values\n\n")
+        d_heatmap <- t(scale(t(d)))
+    } else {
+        if (z_transform == "col") {
+            cat("\nColumns are tranformed into z-values\n\n")
+            d_heatmap <- scale(d)
+        } else {
+            d_heatmap <- d
+        }
+    }
+    
+    if (!is.null(col_data)) {
+        
+        if (identical(col_data, NA)) {
+            col_data <- d_heatmap
+        }
+        
+        if (col_distance == "pearson") {
+            col_dist <- as.dist(1 - cor(col_data, method = "pearson", use = "pairwise.complete.obs"))
+            cat("Using (1 - Pearson correlation) as distance for columns.\n")
+        } else if (col_distance == "spearman") {
+            col_dist <- as.dist(1 - cor(col_data, method = "spearman", use = "pairwise.complete.obs"))
+            cat("Using (1 - Spearman correlation) as distance for columns.\n")
+        } else {
+            col_dist <- dist(t(col_data), method = col_distance)
+            cat("Using", col_distance, "distance for columns.\n")
+        }
+        
+        if (sum(is.na(col_dist)) > 0) {
+            cat("\n=== NA values in col distance matrix ===\n")
+            col_dist[is.na(col_dist)]  <-  max(col_dist, na.rm =  TRUE)
+        }
+        
+        col_tree <- hclust(col_dist, method = col_linkage)
+        cat("Using", col_linkage, "linkage for columns.\n")
+        
+        if (col_reorder) {
+            col_clustering <- reorder(as.dendrogram(col_tree), 1:ncol(as.matrix(col_dist)), agglo.FUN = mean)
+        } else {
+            col_clustering <- as.dendrogram(col_tree)
+        }
+    }
+    
+    cat("\n")
+    
+    if (!is.null(row_data)) {
+        
+        if (identical(row_data, NA)) {
+            row_data <- d_heatmap
+        }
+        
+        if (row_distance == "pearson") {
+            row_dist <- as.dist(1 - cor(t(row_data), method = "pearson", use = "pairwise.complete.obs"))
+            cat("Using (1 - Pearson correlation) as distance for rows.\n")
+        } else if (row_distance == "spearman") {
+            row_dist <- as.dist(1 - cor(t(row_data), method = "spearman", use = "pairwise.complete.obs"))
+            cat("Using (1 - Spearman correlation) as distance for rows.\n")
+        } else {
+            row_dist <- dist(row_data, method = row_distance)
+            cat("Using", row_distance, "distance for rows.\n")
+        }
+        
+        if (sum(is.na(row_dist)) > 0) {
+            cat("\n=== NA values in row distance matrix ===\n")
+            row_dist[is.na(row_dist)]  <-  max(row_dist, na.rm =  TRUE)
+        }
+        
+        row_tree <- hclust(row_dist, method = row_linkage)
+        cat("Using", row_linkage, "linkage for rows.\n")
+        
+        if (row_reorder) {
+            row_clustering <- reorder(as.dendrogram(row_tree), 1:ncol(as.matrix(row_dist)), agglo.FUN = mean)
+        }
+        else {
+            row_clustering <- as.dendrogram(row_tree)
+        }
+    }
+    
+    cat("\n")
+    
+    colsep  <- seq(1, ncol(d_heatmap))
+    rowsep  <- seq(1, nrow(d_heatmap))
+    
+    sepcolor  <-  "grey100"
+    sepwidth  <-  c(0.02, 0.02)
+    
+    
+    if (!sep) {
+        colsep <- NULL
+        rowsep <- NULL
+        sepcolor <- NULL
+        sepwidth <- NULL
+    }
+    
+    col_color_bar_matrix  <-  NULL
+    
+    if (!is.null(col_color_bar)) {
+        col_color_bar_matrix <- as.matrix(as.data.frame(col_color_bar))
+        colnames(col_color_bar_matrix) <- names(col_color_bar)
+        if (ncol(col_color_bar_matrix) > 1) {
+            col_color_bar_matrix <- col_color_bar_matrix[, ncol(col_color_bar_matrix):1]
+        }
+    }
+    
+    if (is.null(col_data)) {
+        if (is.null(row_data)) {
+            dendrogram = "none"
+        } else {
+            dendrogram = "row"
+        }
+    } else {
+        if (is.null(row_data)) {
+            dendrogram = "column"
+        } else {
+            dendrogram = "both"
+        }
+    }
+    
+    
+    ion$.heatmap.2_gplots.3.0.1_modified(as.matrix(d_heatmap),
+                                         dendrogram = dendrogram,
+                                         Colv = if (is.null(col_data)) FALSE else col_clustering,
+                                         Rowv = if (is.null(row_data)) FALSE else row_clustering,
+                                         col = color,
+                                         breaks = if (zscore) seq(-2, 2, length.out = (length(color) + 1)) else seq(ifelse(is.null(color_min), min(d_heatmap, na.rm = TRUE), color_min), ifelse(is.null(color_max), max(d_heatmap, na.rm = TRUE), color_max), length.out = (length(color) + 1)),
+                                         key = key,
+                                         keysize = 1,
+                                         
+                                         cexRow = cexRow,
+                                         cexCol = cexCol,
+                                         
+                                         colsep = colsep,
+                                         rowsep = rowsep,
+                                         sepcolor = sepcolor,
+                                         sepwidth = sepwidth,
+                                         
+                                         scale = "none",
+                                         symkey = zscore,
+                                         density.info = "none",
+                                         trace = "none",
+                                         margins = c(col_margin, row_margin),
+                                         
+                                         labRow = if (is.null(row_labels)) "" else row_labels,
+                                         labCol = if (is.null(col_labels)) "" else col_labels,
+                                         
+                                         ColSideColors = if (is.null(col_colors)) col_color_bar_matrix else col_colors,
+                                         
+                                         RowSideColors = row_colors,
+                                         
+                                         colRow = row_label_colors,
+                                         colCol = col_label_colors,
+                                         
+                                         srtCol = col_label_rotated,
+                                         
+                                         lwid = lwid,
+                                         lhei = lhei,
+                                         main = main, ...)
+}
+
 # Normalization ----
 
 ion$normalize_global <- function(d, total_count = NULL) {
@@ -331,10 +589,9 @@ ion$wilcox_test <- function(dat, group1, group2, paired = FALSE) {
 
     for (r in (1:N)) {
         x <- as.numeric(dat[r, group1])
-        y <- as.numeric(dat[r, group2])
 
         # calculate FC in case the test fails
-        logFC[r] <- mean(y - x, na.rm = TRUE)
+        logFC[r] <- mean(y, na.rm = TRUE) - mean(x, na.rm = TRUE)
         if (is.nan(logFC[r])) {
             logFC[r] <- 0
         }
@@ -491,251 +748,6 @@ ion$str_split <- function(comma_separated_text, sep = ",") {
 
 # Heatmap ----
 
-ion$heatmap <- function(d,
-                       # a numeric matrix to show in the heatmap
-
-                       color = c("#4292C6", "#519CCC", "#61A7D2", "#72B1D7", "#85BCDB",
-                                 "#98C7DF", "#A9CEE4", "#B8D5EA", "#C6DBEF", "#CFE1F2",
-                                 "#D9E7F5", "#E2EDF8", "#EBF3FB", "#F5F9FE", "#F9F9F8",
-                                 "#FCF6F1", "#FEF3E8", "#FEEEDE", "#FEE8D3", "#FDE1C4",
-                                 "#FDD9B4", "#FDD0A3", "#FDC48F", "#FDB77A", "#FDAA66",
-                                 "#FD9E54", "#FD9142", "#FA8432", "#F57622", "#F16913"),
-                       # heatmap color, e.g. colorRampPalette(c("white", "Orange"))(32), rev(heat.colors(32)), or bluered(59), or c(colorRampPalette(c("blue", "white"))(30), colorRampPalette(c("white", "red"))(30)[-1])
-
-                       color_min = NULL,
-                       # values below this value will get the first color value, default minimum of d_heatmap
-
-                       color_max = NULL,
-                       # values above this value will get the last color value, default maximum of d_heatmap
-
-                       z_transform = "row",
-                       # set this to "col", "row", or "none".
-
-                       col_data = NA,
-                       # data use for column clustering
-
-                       col_distance = "euclidean",
-                       # distance for column clustering, e.g. "pearson" = 1-Pearson correlation, "spearman" = 1-Spearman correlation, "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski".
-
-                       col_linkage = "complete",
-                       # linkage for column clustering, e.g. "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
-
-                       col_reorder = TRUE,
-                       # reorder column as input while maintaining the tree structure
-
-                       col_labels = NULL,
-                       # column labels, e.g. colnames(d_heatmap),
-
-                       col_label_colors = NULL,
-                       # column labels colors
-
-                       col_label_rotated = 90,
-                       # degree of labels rotation
-
-                       col_color_bar = NULL,
-                       # a list of color vectors, each vector for a bar
-                       
-                       col_colors = NULL,
-                       # a vector of colors
-
-                       row_colors = NULL,
-                       # a vector of colors
-                       
-                       col_margin = 0.5,
-                       # margin for column labels
-
-                       row_data = NA,
-                       # data for row clustering
-
-                       row_distance = "euclidean",
-                       # "pearson", "spearman", "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski".
-
-                       row_linkage = "complete",
-                       # "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
-
-                       row_reorder = TRUE,
-                       # see column
-
-                       row_labels = NULL,
-                       # see column, rownames(d_heatmap),
-
-                       row_label_colors = NULL,
-                       # see column
-
-                       row_margin = 0.5,
-                       # see column
-
-                       sep = FALSE,
-                       # a separator between cells
-
-                       main = NULL,
-                       cexCol = 1,
-                       cexRow = 1,
-                       lwid = NULL,
-                       lhei = NULL,
-                       key = TRUE, ...) {
-
-    zscore <- z_transform != "none"
-    
-    if (z_transform == "row") {
-        cat("\nRows are tranformed into z-values\n\n")
-        d_heatmap <- t(scale(t(d)))
-    } else {
-        if (z_transform == "col") {
-            cat("\nColumns are tranformed into z-values\n\n")
-            d_heatmap <- scale(d)
-        } else {
-            d_heatmap <- d
-        }
-    }
-    
-    if (!is.null(col_data)) {
-
-        if (identical(col_data, NA)) {
-            col_data <- d_heatmap
-        }
-        
-        if (col_distance == "pearson") {
-            col_dist <- as.dist(1 - cor(col_data, method = "pearson", use = "pairwise.complete.obs"))
-            cat("Using (1 - Pearson correlation) as distance for columns.\n")
-        } else if (col_distance == "spearman") {
-            col_dist <- as.dist(1 - cor(col_data, method = "spearman", use = "pairwise.complete.obs"))
-            cat("Using (1 - Spearman correlation) as distance for columns.\n")
-        } else {
-            col_dist <- dist(t(col_data), method = col_distance)
-            cat("Using", col_distance, "distance for columns.\n")
-        }
-
-        if (sum(is.na(col_dist)) > 0) {
-            cat("\n=== NA values in col distance matrix ===\n")
-            col_dist[is.na(col_dist)]  <-  max(col_dist, na.rm =  TRUE)
-        }
-
-        col_tree <- hclust(col_dist, method = col_linkage)
-        cat("Using", col_linkage, "linkage for columns.\n")
-
-        if (col_reorder) {
-            col_clustering <- reorder(as.dendrogram(col_tree), 1:ncol(as.matrix(col_dist)), agglo.FUN = mean)
-        } else {
-            col_clustering <- as.dendrogram(col_tree)
-        }
-    }
-
-    cat("\n")
-    
-    if (!is.null(row_data)) {
-        
-        if (identical(row_data, NA)) {
-            row_data <- d_heatmap
-        }
-        
-        if (row_distance == "pearson") {
-            row_dist <- as.dist(1 - cor(t(row_data), method = "pearson", use = "pairwise.complete.obs"))
-            cat("Using (1 - Pearson correlation) as distance for rows.\n")
-        } else if (row_distance == "spearman") {
-            row_dist <- as.dist(1 - cor(t(row_data), method = "spearman", use = "pairwise.complete.obs"))
-            cat("Using (1 - Spearman correlation) as distance for rows.\n")
-        } else {
-            row_dist <- dist(row_data, method = row_distance)
-            cat("Using", row_distance, "distance for rows.\n")
-        }
-
-        if (sum(is.na(row_dist)) > 0) {
-            cat("\n=== NA values in row distance matrix ===\n")
-            row_dist[is.na(row_dist)]  <-  max(row_dist, na.rm =  TRUE)
-        }
-
-        row_tree <- hclust(row_dist, method = row_linkage)
-        cat("Using", row_linkage, "linkage for rows.\n")
-
-        if (row_reorder) {
-            row_clustering <- reorder(as.dendrogram(row_tree), 1:ncol(as.matrix(row_dist)), agglo.FUN = mean)
-        }
-        else {
-            row_clustering <- as.dendrogram(row_tree)
-        }
-    }
-    
-    cat("\n")
-
-    colsep  <- seq(1, ncol(d_heatmap))
-    rowsep  <- seq(1, nrow(d_heatmap))
-
-    sepcolor  <-  "grey100"
-    sepwidth  <-  c(0.02, 0.02)
-
-
-    if (!sep) {
-        colsep <- NULL
-        rowsep <- NULL
-        sepcolor <- NULL
-        sepwidth <- NULL
-    }
-
-    col_color_bar_matrix  <-  NULL
-
-    if (!is.null(col_color_bar)) {
-        col_color_bar_matrix <- as.matrix(as.data.frame(col_color_bar))
-        colnames(col_color_bar_matrix) <- names(col_color_bar)
-        if (ncol(col_color_bar_matrix) > 1) {
-            col_color_bar_matrix <- col_color_bar_matrix[, ncol(col_color_bar_matrix):1]
-        }
-    }
-
-    if (is.null(col_data)) {
-        if (is.null(row_data)) {
-            dendrogram = "none"
-        } else {
-            dendrogram = "row"
-        }
-    } else {
-        if (is.null(row_data)) {
-            dendrogram = "column"
-        } else {
-            dendrogram = "both"
-        }
-    }
-
-
-    ion$.heatmap.2_gplots.3.0.1_modified(as.matrix(d_heatmap),
-                                        dendrogram = dendrogram,
-                  Colv = if (is.null(col_data)) FALSE else col_clustering,
-                  Rowv = if (is.null(row_data)) FALSE else row_clustering,
-                  col = color,
-                  breaks = if (zscore) seq(-2, 2, length.out = (length(color) + 1)) else seq(ifelse(is.null(color_min), min(d_heatmap, na.rm = TRUE), color_min), ifelse(is.null(color_max), max(d_heatmap, na.rm = TRUE), color_max), length.out = (length(color) + 1)),
-                  key = key,
-                  keysize = 1,
-
-                  cexRow = cexRow,
-                  cexCol = cexCol,
-
-                  colsep = colsep,
-                  rowsep = rowsep,
-                  sepcolor = sepcolor,
-                  sepwidth = sepwidth,
-
-                  scale = "none",
-                  symkey = zscore,
-                  density.info = "none",
-                  trace = "none",
-                  margins = c(col_margin, row_margin),
-
-                  labRow = if (is.null(row_labels)) "" else row_labels,
-                  labCol = if (is.null(col_labels)) "" else col_labels,
-
-                  ColSideColors = if (is.null(col_colors)) col_color_bar_matrix else col_colors,
-                  
-                  RowSideColors = row_colors,
-                  
-                  colRow = row_label_colors,
-                  colCol = col_label_colors,
-
-                  srtCol = col_label_rotated,
-
-                  lwid = lwid,
-                  lhei = lhei,
-                  main = main, ...)
-}
 
 ion$.heatmap.2_gplots.3.0.1_modified <- function (x, Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE,
     distfun = dist, hclustfun = hclust, dendrogram = c("both",
