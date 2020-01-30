@@ -11,15 +11,6 @@ ion <- list()
 
 
 # Main ----
-ion$test <- function(d, groups, method, ...) {
-    
-    if (method == "beta-binomial") {
-        
-    } else {
-        cat("'method' must be one of \"beta-binomial\".")
-    }
-}
-
 
 ion$heatmap <- function(d,
                         # a numeric matrix to show in the heatmap
@@ -330,9 +321,27 @@ ion$impute <- function(d, method = "constant", value = 0, seed = 1203) {
 
 ion$load <- function(filename,
                      # a tab-deliminated text file with a header line
+                     col_names = NULL,
                      ...
                      ) {
-    return(read.delim(filename, quote = "", ...))
+    if (is.null(col_names)) {
+        return(read.delim(filename, quote = "", ...))
+    } else {
+        h <- read.delim(filename, nrow = 1)
+        
+        a <- setdiff(col_names, colnames(h))
+        
+        if (length(a) > 0) {
+            message(paste("Column not available:", a, "\n"))
+            return(NULL)
+        }
+        
+        v <- rep("NULL", ncol(h))
+        names(v) <- colnames(h)
+        v[col_names] <- NA
+        
+        return(read.delim(filename, colClasses = v))
+    }
 }
 
 ion$save <- function(d,
@@ -703,7 +712,7 @@ ion$beta_binomial_2g_paired <- function(dat, group1, group2, total_count = NULL,
     fc[total_g2 == 0] <- fc[total_g2 == 0]*0 - BIG
     fc[total_g1 == 0 & total_g2 == 0] <- 1
 
-    return (list(fc = out$fc,
+    return (list(fc = fc,
                  pval = out$p.value,
                  pval.BH = p.adjust(out$p.value, method = "BH")))
 }
@@ -1065,19 +1074,35 @@ a[startsWith(a, "`")] <- "white"
 image(csc, col = a, axes = F)
 
 a <- as.vector(csc.colors)
+
 for (i in 1:nrow(csc)) {
     for (j in 1:ncol(csc)) {
         if (nchar(a[csc[i,j]]) <= 1) {
-            text((i-1)/(nrow(csc)-1), (j-1)/(ncol(csc)-1),a[csc[i,j]], cex = 1.5)
+            if (ncol(csc) > 1) {
+                text((i-1)/(nrow(csc)-1), (j-1)/(ncol(csc)-1), a[csc[i,j]], cex = 1.5)
+            }
+            else {
+                text((i-1)/(nrow(csc)-1), 0, a[csc[i,j]], cex = 1.5)
+            }
         }
         if (startsWith(a[csc[i,j]],"`")) {
-            eval(parse(text=paste0("points(",
-                                   (i-1)/(nrow(csc)-1),
-                                   ",",
-                                   (j-1)/(ncol(csc)-1), 
-                                   ",",
-                                   substring(a[csc[i,j]],2,1000),
-                                   ")")))
+            if (ncol(csc) > 1) {
+                eval(parse(text=paste0("points(",
+                                       (i-1)/(nrow(csc)-1),
+                                       ",",
+                                       (j-1)/(ncol(csc)-1), 
+                                       ",",
+                                       substring(a[csc[i,j]],2,1000),
+                                       ")")))
+            } else {
+                eval(parse(text=paste0("points(",
+                                       (i-1)/(nrow(csc)-1),
+                                       ",",
+                                       0, 
+                                       ",",
+                                       substring(a[csc[i,j]],2,1000),
+                                       ")")))
+            }
         }
     }
 }
