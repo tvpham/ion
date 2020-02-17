@@ -225,7 +225,6 @@ ion$heatmap <- function(d,
                                          col = color,
                                          breaks = if (zscore) seq(-2, 2, length.out = (length(color) + 1)) else seq(ifelse(is.null(color_min), min(d_heatmap, na.rm = TRUE), color_min), ifelse(is.null(color_max), max(d_heatmap, na.rm = TRUE), color_max), length.out = (length(color) + 1)),
                                          key = key,
-                                         keysize = 1,
                                          
                                          cexRow = cexRow,
                                          cexCol = cexCol,
