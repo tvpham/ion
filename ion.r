@@ -1,16 +1,12 @@
 # Author: Thang V Pham
 #
-# This code contains a modified version of the heatmap.2 function
-# in the R gplots package (version 3.0.1)
-#
-# Copyright Thang Pham, 2018-2019
+# Copyright Thang Pham, 2018-2020
 
 # NOTE: sourcing this will replace any existing 'ion' object
 
 ion <- list()
 
-
-# Main ----
+# Heatmap ----
 
 ion$heatmap <- function(d,
                         # a numeric matrix to show in the heatmap
@@ -756,6 +752,8 @@ ion$str_split <- function(comma_separated_text, sep = ",") {
 
 # Heatmap ----
 
+# This code contains a modified version of the heatmap.2 function in the R gplots
+# package (version 3.0.1).
 
 ion$.heatmap.2_gplots.3.0.1_modified <- function (x, Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE,
     distfun = dist, hclustfun = hclust, dendrogram = c("both",
