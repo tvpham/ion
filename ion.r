@@ -1056,16 +1056,20 @@ if (!is.matrix(ColSideColors)) {
 else{
     par(mar = c(0.5, 0, 0, margins[2]))
     csc = matrix(ColSideColors[colInd, ], nrow = length(colInd))
+    
+    csc_Thang <- matrix(0, nrow = dim(csc)[1], ncol = dim(csc)[2])
+    
     csc.colors = matrix()
     csc.names = names(table(csc))
     csc.i = 1
     for (csc.name in csc.names) {
         csc.colors[csc.i] = csc.name
-        csc[csc == csc.name] = csc.i
+        csc_Thang[csc == csc.name] = csc.i
         csc.i = csc.i + 1
     }
-    csc = matrix(as.numeric(csc), nrow = dim(csc)[1])
-
+    #csc = matrix(as.numeric(csc), nrow = dim(csc)[1])
+    csc <- csc_Thang
+    
 a <- as.vector(csc.colors)
 a[nchar(a) <= 1] <- "white"
 a[startsWith(a, "`")] <- "white"
