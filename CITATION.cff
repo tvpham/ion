@@ -4,7 +4,7 @@ authors:
   given-names: "Thang Viet"
   orcid: "https://orcid.org/0000-0003-0333-2492"
 title: "Data analysis for the masses"
-version: 1.1
+version: 1.0.0
 doi: 10.5281/zenodo.7878517
 date-released: 2023-04-29
 url: "https://github.com/tvpham/ion"
