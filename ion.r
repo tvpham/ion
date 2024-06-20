@@ -501,6 +501,10 @@ ion$logFC_to_fc <- function(logFC, dat, group1, group2, log_base = 10, BIG = 1e4
 
 ion$limma_2g <- function(dat, group1, group2) {
 
+    if ((length(group1) + length(group2)) != length(unique(c(group1, group2)))) {
+        stop("Duplicated sample.")
+    }
+    
     require(limma)
     require(Biobase)
 
@@ -534,7 +538,11 @@ ion$limma_2g_paired <- function(dat, group1, group2) {
     if (length(group1) != length(group2)) {
         stop("Unequal group for a paired test.")
     }
-
+    
+    if ((length(group1) + length(group2)) != length(unique(c(group1, group2)))) {
+        stop("Duplicated sample.")
+    }
+    
     N <- nrow(dat)
 
     pval <- rep(1, N)
@@ -567,6 +575,10 @@ ion$limma_2g_paired <- function(dat, group1, group2) {
 
 ion$limma_3g <- function(dat, group1, group2, group3) {
 
+    if ((length(group1) + length(group2) + length(group3)) != length(unique(c(group1, group2, group3)))) {
+        stop("Duplicated sample.")
+    }
+    
     require(limma)
     require(Biobase)
 
@@ -598,6 +610,10 @@ ion$limma_3g <- function(dat, group1, group2, group3) {
 }
 
 ion$limma_4g <- function(dat, group1, group2, group3, group4) {
+    
+    if ((length(group1) + length(group2) + length(group3) + length(group4)) != length(unique(c(group1, group2, group3, group4)))) {
+        stop("Duplicated sample.")
+    }
     
     require(limma)
     require(Biobase)
@@ -771,6 +787,11 @@ ion$wilcox_test <- function(dat, group1, group2, paired = FALSE) {
             stop("Unequal group for a paired test.")
         }
     }
+    
+    if ((length(group1) + length(group2)) != length(unique(c(group1, group2)))) {
+        stop("Duplicated sample.")
+    }
+    
 
     N <- nrow(dat)
 
@@ -863,6 +884,10 @@ ion$fold_change <- function(c1, c2, BIG = 1e4) {
 
 ion$beta_binomial_2g <- function(dat, group1, group2, total_count = NULL) {
 
+    if ((length(group1) + length(group2)) != length(unique(c(group1, group2)))) {
+        stop("Duplicated sample.")
+    }
+    
     require(countdata)
 
     d <- dat[, c(group1, group2)]
@@ -881,6 +906,14 @@ ion$beta_binomial_2g <- function(dat, group1, group2, total_count = NULL) {
 
 ion$beta_binomial_2g_paired <- function(dat, group1, group2, total_count = NULL, BIG = 1e4) {
 
+    if (length(group1) != length(group2)) {
+        stop("Unequal group for a paired test.")
+    }
+    
+    if ((length(group1) + length(group2)) != length(unique(c(group1, group2)))) {
+        stop("Duplicated sample.")
+    }
+    
     require(countdata)
 
     d <- dat[, c(group1, group2)]
@@ -897,6 +930,10 @@ ion$beta_binomial_2g_paired <- function(dat, group1, group2, total_count = NULL,
 
 ion$beta_binomial_3g <- function(dat, group1, group2, group3, total_count = NULL) {
 
+    if ((length(group1) + length(group2) + length(group3)) != length(unique(c(group1, group2, group3)))) {
+        stop("Duplicated sample.")
+    }
+    
     require(countdata)
 
     d <- dat[, c(group1, group2, group3)]
@@ -912,6 +949,10 @@ ion$beta_binomial_3g <- function(dat, group1, group2, group3, total_count = NULL
 
 ion$beta_binomial_4g <- function(dat, group1, group2, group3, group4, total_count = NULL) {
 
+    if ((length(group1) + length(group2) + length(group3) + length(group4)) != length(unique(c(group1, group2, group3, group4)))) {
+        stop("Duplicated sample.")
+    }
+    
     require(countdata)
 
     d <- dat[, c(group1, group2, group3, group4)]
@@ -926,6 +967,10 @@ ion$beta_binomial_4g <- function(dat, group1, group2, group3, group4, total_coun
 }
 
 ion$beta_binomial_5g <- function(dat, group1, group2, group3, group4, group5, total_count = NULL) {
+    
+    if ((length(group1) + length(group2) + length(group3) + length(group4) + length(group5)) != length(unique(c(group1, group2, group3, group4, group5)))) {
+        stop("Duplicated sample.")
+    }
     
     require(countdata)
     
@@ -943,6 +988,10 @@ ion$beta_binomial_5g <- function(dat, group1, group2, group3, group4, group5, to
 
 
 ion$beta_binomial_6g <- function(dat, group1, group2, group3, group4, group5, group6, total_count = NULL) {
+
+    if ((length(group1) + length(group2) + length(group3) + length(group4) + length(group5) + length(group6)) != length(unique(c(group1, group2, group3, group4, group5, group6)))) {
+        stop("Duplicated sample.")
+    }
     
     require(countdata)
     
@@ -1003,20 +1052,31 @@ ion$str_split_trim <- function(comma_separated_text, sep = ",") {
 
 # Machine learning, y is 01 vector, rows of X are samples ----
 
-ion$auc <- function(y, yhat, make_plot = FALSE, ...) {
-    # compute AUC, assuring AUC >= 0.5
+ion$roc_auc <- function(y, yhat, make_plot = FALSE, direction = "auc", ...) {
     
-    require(pROC)
-    r <- roc(controls = yhat[y == 1], 
-             cases = yhat[y != 1], quiet = TRUE, direction = ">")
-    if (r$auc < 0.5) {
+    require(pROC)    
+    
+    if (direction == "auc") {
+        # compute AUC, assuring AUC >= 0.5
         r <- roc(controls = yhat[y == 1], 
-                 cases = yhat[y != 1], quiet = TRUE, direction = "<")    
+                 cases = yhat[y != 1], quiet = TRUE, direction = ">")
+        if (r$auc < 0.5) {
+            r <- roc(controls = yhat[y == 1], 
+                     cases = yhat[y != 1], quiet = TRUE, direction = "<")    
+            d <- "<"
+        } else {
+            d <- ">"
+        }
+    } else {
+        r <- roc(controls = yhat[y == 1], 
+                 cases = yhat[y != 1], quiet = TRUE, direction = direction)
+        d <- direction
     }
+    
     if (make_plot) {
         plot(r, ...)
     }
-    return(r$auc)
+    return(list(auc = r$auc, direction = d))
 }
 
 
@@ -1028,7 +1088,7 @@ ion$find_max_auc <- function(y, X) {
     a <- 0
     col_max <- -1
     for (i in 1:ncol(X)) {
-        b <- ion$auc(y, X[,i], make_plot = FALSE)
+        b <- ion$roc_auc(y, X[,i], make_plot = FALSE)$auc
         if (b > a) {
             a <- b
             col_max <- i
@@ -1105,7 +1165,7 @@ ion$logistic_regression_leave_one_out_auc <- function(y, X) {
                                            newdata = d[f, ],
                                            type = "response")
     }
-    return(ion$auc(y, logistic_predictions, ))
+    return(ion$roc_auc(y, logistic_predictions, )$auc)
 }
 
 
